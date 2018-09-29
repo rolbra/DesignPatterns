@@ -6,68 +6,40 @@
 
 using namespace std;
 
-class MyCircle {
-private:
-	int x, y, radius;
-	string color;
 
-public:
-	MyCircle() {};
-	MyCircle( int x, int y, int radius, string color ) {
-		this->x = x;
-		this->y = y;
-		this->radius = radius;
-		this->color = color;
-	};
-	void setX( int x ) { this->x = x; };
-	void setyY( int y ) { this->y = y; };
-	void setRadius( int radius ) { this->radius = radius; };
-	void setColor( string color ) { this->color = color; };
-	int getX() { return x; };
-	int getY() { return y; };
-	int getRadius() { return radius; };
-	string getColor() { return color; };
-};
-
-//=======================================================
 
 class SharedAttributes {
 private:
-	set<string>colors;
-	set<string>::iterator it;
-	array<int, 10>numbers;
+	array<string*,10>colors;
+	int numberOfColors=0;
+
+	array<string*, 10 > bitmaps;
+	int numberOfBitmaps;
 
 public:
-	void insertColor( string color ) {
-		colors.insert( color );
-	};
+	SharedAttributes() {};
 
-	string findColor( string color ) {
-		it = colors.find( color );
-		if (it != colors.end())
-		{
-			cout << *it;
-			return *it;
-		}
-		else
-		{
-			return nullptr;
-		}
-	};
+	int getAmountofColors() {
+		return numberOfColors;
+	}
 
-	void insertNumber( int value ) {
-		int size = numbers.size();
-		numbers[size] = value;
-	};
-	int findValue( int value ) {
-		for (int i = 0; i < 10; i++)
+	string* insertColor( string color ) {
+		colors[numberOfColors] = new string( color );
+		cout << "Color " << *colors[numberOfColors] << " created. Adress: " << colors[numberOfColors] << endl << endl;
+		return colors[numberOfColors++];
+	}
+
+	string* findColor( string* color ) {
+		for (int index = 0; index < numberOfColors; index++)
 		{
-			if (numbers[i] == value)
+			if (*color == *colors[index])
 			{
-				return numbers[i];
+				return colors[index];
 			}
 		}
-	};
+		
+		return new string("");
+	}
 };
 
 class SmartCircle {
@@ -84,7 +56,7 @@ public:
 		this->color = color;
 	};
 	void setX( int x ) { this->x = x; };
-	void setyY( int y ) { this->y = y; };
+	void setY( int y ) { this->y = y; };
 	void setRadius( int radius ) { this->radius = radius; };
 	void setColor( string *color ) { this->color = color; };
 	int getX() { return x; };
@@ -95,15 +67,37 @@ public:
 
 class Factory {
 private:
-
+	SharedAttributes circleAtttributes;
 public:
 	Factory() {
 	};
 
 	SmartCircle* getObject( int x, int y, int radius, string *color ) {
-		SharedAttributes circleAtttributes();
+		string* storedColor;
+		//Is there one color at least?
+		int amount = circleAtttributes.getAmountofColors();
+		if( amount > 0)
+		{ 
+			string* rc = circleAtttributes.findColor( color );
+			//Is the color not existing create it in the color array
+			if (*rc == "")
+			{
+				storedColor = circleAtttributes.insertColor( *color );
+			}
+			//Is the color already existing than take this one
+			else
+			{
+				storedColor = rc;
+				cout << "color: " << *storedColor << " existing. Adress: " << storedColor << endl << endl;
+			}
+		}
+		else
+		{
+			storedColor = circleAtttributes.insertColor( *color );
+			cout << *storedColor;
+		}
 
-		SmartCircle* smartCircle = new SmartCircle( x, y, radius, color );
+		SmartCircle* smartCircle = new SmartCircle( x, y, radius, storedColor );
 		if (smartCircle == nullptr)
 		{
 			return nullptr;
@@ -115,38 +109,95 @@ public:
 	}
 };
 
+int checkUserInput( const std::string& input ) {
+	if (std::all_of( input.begin(), input.end(), ::isdigit ))
+	{
+		return stoi( input );
+	}
+	else return -1;
+}
 
 int main()
 {
-	vector<MyCircle*> myCircles{
-		new MyCircle{ 4, 1, 10, "white" },
-		new MyCircle{ 2, 2, 10, "blue" },
-		new MyCircle{ 2, 3, 10, "white" },
-		new MyCircle{ 3, 3, 10, "red" },
-		new MyCircle{ 1, 5, 10, "white" },
-		new MyCircle{ 4, 5, 10, "blue" }
-	};
-
-	vector<SmartCircle*> mySmartCircles;
+	//splashScreen
+	cout << "//////////////////////" << endl;
+	cout << "Flightweight Pattern" << endl;
+	cout << "Sharing Attributes between simular Objects" << endl;
+	cout << "to decrease memory consumption" << endl;
+	cout << "//////////////////////";
+	cout << endl;
+	cout << endl;
+	//factory manages the circles
 	Factory objectFactory;
-	mySmartCircles.push_back( objectFactory.getObject( 5, 5, 10, new string( "smart" ) ) );
 
-	SharedAttributes test;
-	test.insertColor( "test" );
-	string rc = test.findColor( "test" );
+	//stores all created circles
+	vector<SmartCircle*> mySmartCircles;
+	
+	//service overview
+	int circleCreation = 0;
+	string userInput;
+	int option=0;
+	//user input:
+	int x, y, radius;
+	string color;
 
-	test.insertNumber( 1 );
-	int value = test.findValue( 1 );
+	while(1)
+	{
+		cout << "[1] Create new circle" << endl;
+		cout << "[2] Delete a circle (deactivated)" << endl;
+		cout << "[3] Show all circles" << endl;
+		cout << "[4] Show all attributes" << endl;
+		cout << "[5] Show all colors" << endl;
+		cout << "[6] Exit" << endl;
+		cin >> userInput;
+		option = checkUserInput(userInput);
+		cin.clear();
+		cin.ignore( 10000, '\n' );
+		switch (option)
+		{
+		case 1:
+			cout << endl << endl;
+			cout << "=======================" << endl;
+			cout << " CREATE NEW CIRCLE (" << ++circleCreation << ")" << endl;
+			cout << "=======================" << endl << endl;
+			cout << "set x: ";
+			cin >> x;
+			cout << "set y: 5" << endl;
+			y = 5;
+			cout << "set r: 5" << endl;
+			radius = 5;
+			cout << "set color: ";
+			cin >> color;
 
-	std::cout << "Hello World!\n";
-	std::cout << "here are my objects" << endl;
-
-	for (MyCircle* circle : myCircles) {
-		std::cout << circle->getX() << ", " << circle->getY() << ", " << circle->getRadius() << ", " << circle->getColor() << endl;
+			//user request to factory
+			try
+			{
+				mySmartCircles.push_back( objectFactory.getObject( x, y, radius, &color));
+			}
+			catch (...)
+			{
+				cout << "circle creation failed" << endl;
+			}
+			break;
+		case 3:
+			//display all smart circles
+			if (mySmartCircles.size() == 0)
+			{
+				cout << "No circles created yet" << endl << endl;
+				break;
+			}
+			std::cout << endl << "here are my smart objects" << endl << endl;
+			for (SmartCircle* circle : mySmartCircles) {
+				std::cout << circle->getX() << ", " << circle->getY() << ", " << circle->getRadius() << ", " << *circle->getColor() << ", " << circle->getColor() << endl;
+			}
+			break;
+		case 6:
+			return 0;
+		default:
+			cout << endl << "Better try options 1 - 6" << endl << endl;
+			continue;
+		}
 	}
-
-	std::cout << endl << "here are my smart objects" << endl;
-	for (SmartCircle* circle : mySmartCircles) {
-		std::cout << circle->getX() << ", " << circle->getY() << ", " << circle->getRadius() << ", " << *circle->getColor() << endl;
-	}
+	
+	system( "PAUSE" );
 }
